@@ -1,0 +1,48 @@
+---
+title: "Week4 Getting and Cleaning Data"
+author: "KellyPisane"
+date: "April 27, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+commands learned:
+tolower(), toupper()-change to all upper or lower case letters
+strsplit()-splitting strings
+sub(), gsub()-substituting characters
+grep(), grepl() - searching
+table() - make a table of something
+### Additional useful string functions appear in stringr package
+nchar()
+Substr()
+paste()
+paste0()
+str_trim()
+#Working with Dates
+date()
+Sys.Date()
+format()
+as.Date()
+weekdays()
+months()
+julian()
+###Lubridate package
+ymd()
+mdy()
+dmy()
+ymd_hms()
+Sys.timezone()
+wday() replaces weekday for lubridate 
+###in swirl exercise
+today()
+now()
+update()
+with_tz()
+interval()
+as.period()
+stopwatch()

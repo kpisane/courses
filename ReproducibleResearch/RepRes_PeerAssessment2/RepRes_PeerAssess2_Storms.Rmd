@@ -1,0 +1,151 @@
+---
+title: "The Health and Financial Impact of US Storms"
+author: "K Pisane"
+date: "November 2, 2017"
+output: html_document
+---
+##Synopsis 
+The goal of this analysis is to understand which types of storm events have the largest impact on human health and which types of storm events have the greatest financial impact.  
+
+For the purpose of this analysis, we will consider those event types with the largest number of fatalities to be those with the greatest impact on human health. In the event that more than one type of storm has the same number of fatalities, that with the largest number of injuries will be considered the one that does the most damage to human health.  
+
+The financial impact has been determined from the damages (in Billions of US dollars) reported in the raw data.
+
+<b>Tornados have caused the most damage to population health and floods have caused the most financial damage.</b>
+
+##Data Processing
+
+To perform the data processing and analysis, the dplyr and ggplot packages were used.  The data was downloaded from the NOAA Storm Dataset and imported using the read.csv function from the .bz2 file.
+
+```{r setup}
+knitr::opts_chunk$set(cache = TRUE, echo = TRUE, fig.align = 'center')
+library(dplyr)
+library(ggplot2)
+setwd("~/../Desktop/DataScience/ReproducibleResearch/RepRes_PeerAssessment2")
+destfile="repdata%2Fdata%2FStormData.csv.bz2"
+```
+
+```{r load}
+Storms <- read.csv(destfile)
+```
+
+
+Because we are interested in the national totals, we need to collect the number of fatailties, injuries, and the damages for each type of storm over all states.  To do this, we will need to convert the damages from the notation of a number and an exponent to the decimal number so that we can add them together.  
+
+First, let's define a function named fix_exponents that will convert the letter exponents to numbers.
+Then, create a data frame that includes the total damages.
+
+```{r process}
+# this function will take a column from our data frame as input and return 
+# the same column but with only numeric values
+fix_exponents <- function(x){
+        y <<- as.character(x)
+        y[which(y %in% c("H","h"))] <<- 2
+        y[which(y %in% c("K","k"))] <<- 3
+        y[which(y %in% c("M","m"))] <<- 6
+        y[which(y %in% c("B","b"))] <<- 9
+        y[which(y %in% c("?", "+", "-",""))] <<-0
+    return(as.numeric(y))    
+}
+
+# build the data set that will be used to answer the questions from the 
+# Storms data set
+df <- Storms %>%
+    # keep only the necessary columns
+    select(c(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP,
+             CROPDMG, CROPDMGEXP)) %>%
+    #change the exponents to numbers using the function we defined above
+    mutate(PROPDMGEXP_num = fix_exponents(PROPDMGEXP),
+           CROPDMGEXP_num = fix_exponents(CROPDMGEXP)) %>%
+    #compute the damages in dollars
+    mutate(PROPDMG_TOTAL = PROPDMG*(10^PROPDMGEXP_num),
+           CROPDMG_TOTAL = CROPDMG*(10^CROPDMGEXP_num)) %>%
+    #compute the total damages in dollars
+    mutate(DAMAGES = CROPDMG_TOTAL + PROPDMG_TOTAL)
+```
+
+Now that we have the information that is needed, we can determine the total number of fatalities, injuries, and the total damages for each type of event using the aggregate function on the hazards dataset. The result of summing each of the variables over the event types is stored as the object hazards_national.  
+
+```{r sums}
+hazards <- select(df, c(EVTYPE, FATALITIES, INJURIES, DAMAGES))
+
+# Clean up EVTYPEs so that events of the same type are counted together (e.g waterspouts, wind)
+hazards$EVTYPE <- toupper(hazards$EVTYPE)
+#Group like things together
+y <- data.frame(table(hazards$EVTYPE))
+y <- y[order(y$Freq, decreasing = TRUE),]
+
+# Clean up misspellings, typos, and group like events together
+hazards$EVTYPE[grep("TSTM*", hazards$EVTYPE)] <- "THUNDERSTORM"
+hazards$EVTYPE[grep("THUN*", hazards$EVTYPE)] <- "THUNDERSTORM"
+hazards$EVTYPE[grep("LIGHTNING", hazards$EVTYPE)] <- "THUNDERSTORM"
+hazards$EVTYPE[grep("*FLOOD", hazards$EVTYPE)] <- "FLOOD"
+hazards$EVTYPE[grep("*STREAM FLD", hazards$EVTYPE)] <- "FLOOD"
+hazards$EVTYPE[grep("*SNOW", hazards$EVTYPE)] <- "SNOW"
+hazards$EVTYPE[grep("HAIL*", hazards$EVTYPE)] <- "HAIL"
+hazards$EVTYPE[grep("WINTER STORM*", hazards$EVTYPE)] <- "WINTER STORM"
+hazards$EVTYPE[grep("*SPOUT*", hazards$EVTYPE)] <- "WATER SPOUT"
+hazards$EVTYPE[grep("TROPICAL STORM*", hazards$EVTYPE)] <- "TROPICAL STORM"
+hazards$EVTYPE[grep("*FLDG", hazards$EVTYPE)] <- "FLOOD"
+hazards$EVTYPE[grep("TORN*", hazards$EVTYPE)] <- "TORNADO"
+hazards$EVTYPE[grep("WINTER W*", hazards$EVTYPE)] <- "WINTER WEATHER"
+hazards$EVTYPE[grep("*FIRE", hazards$EVTYPE)] <- "FORREST/WILD FIRE"
+
+
+hazards_national <- aggregate(hazards[,2:4],by=list(hazards[,1]), sum)
+```
+
+The hazards_national dataset now contains the total numbers of fatalities and injuries as well as the total damages. this will allow us to determine which event types had the greatest impact on human health and which types of events had the greatest financial impact.
+
+##Results:
+####Part A: Human Health  
+We would like to know the nationwide risk to human health for eachy event types. Below is a plot of the number of fatalities for each event type where the number on the x axis corresponds to the row number of the event type.  
+```{r fatal}
+g <- ggplot(hazards_national, aes(seq(1:length(hazards_national$FATALITIES)), hazards_national$FATALITIES), label = FATALITIES)
+g + geom_point() + 
+    ggtitle("Number of Fatalities") + 
+    xlab("row number") + ylab("Number of Fatalities") +
+        geom_text(aes(label = ifelse(FATALITIES > 500, round(FATALITIES,0),"")),
+              hjust = -1, vjust = 0) +
+    labs(caption = "Number of Fatalities By Event Type")
+```
+
+From the plot, it is clear that there is one type of event that has the most fatalities by far. This is the event in row number <b>`r which(hazards_national$FATALITIES == max(hazards_national$FATALITIES))`</b>.  Let's check whether the event type with the highest number of fatalities and the event type with the highest number of injuries are the same.  
+```{r test}
+#which row has the maximum number of fatalities
+max_fatal <- which(hazards_national$FATALITIES == 
+                       max(hazards_national$FATALITIES))
+#which row has the maximum number of injuries
+max_injury <- which(hazards_national$INJURIES == 
+                        max(hazards_national$INJURIES))
+#does the same row have the maximum number of injuries 
+#and the maximum number of fatalities
+max_fatal == max_injury
+```
+
+The value <i>'TRUE'</i> indicates that the same event type has the maximum number or fatalities and the maximum number of injuries.  This event type is <b> `r tolower(hazards_national$Group.1[max_fatal])`</b>.
+
+####Part B: Economic Impact
+
+Across the United States, which types of events have the greatest economic consequences?
+
+```{r damages}
+p <- ggplot(hazards_national, 
+            aes(seq(1:length(hazards_national$Group.1)), DAMAGES/(10^9), 
+                label = DAMAGES/(10^9)))
+p + geom_point() +
+    ggtitle("Damages Caused By Storms") +
+    xlab("row number") +
+    ylab("Damages (billions of dollars)") + 
+    geom_text(aes(label = ifelse(DAMAGES/(10^9)>25, round(DAMAGES/(10^9),0),"")),
+              hjust = -1, vjust = 0) +
+    labs(caption = "Damages By Event Type")
+        
+```
+
+```{r result}
+#Determine which row has the maximum value of damages and save it as variable n.
+n <- with(hazards_national, which(DAMAGES==max(DAMAGES)))
+```
+
+The highest damages, by far, are approximately $150 Billion caused by hazard type <b>`r hazards_national[n,1]`.</b>

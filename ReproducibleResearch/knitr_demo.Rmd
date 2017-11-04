@@ -1,0 +1,93 @@
+My First knitr Document
+===================================
+
+This is some text (i.e. a "text chunk")
+
+Here is a code chunk
+```{r}
+set.seed(1)
+x <- rnorm(100)
+mean(x)
+```
+
+knitr reproduces (echoes) your code by default along with the result of the code.  
+
+knitr will fill a new document with filler text; delete it
+You can have as many code chunks as you wish.  
+
+You can name your codechunks which will be helpful when we start making graphics.
+```{r secondchunk}
+## R code goes here
+```
+
+##Processing of knitr Documents:
+- you write the RMarkdown document(.Rmd)
+- knitr produces a Markdown document (.md)
+- knitr converts the Markdown document into HTML (by default)
+- .Rmd -> .md -> .html
+- you should NOT edit (or save) the .md or .html documents until you are finished
+
+If you want to turn off echoing use {r name, echo = false}  
+To hide the results use {r name, results = hide}  
+
+## Inline Text Computations
+```{r computetime, echo=FALSE}
+time <- format(Sys.time(), "%a %b %d %X %Y")
+rand <- rnorm(1)
+```
+
+The current time is `r time`. My favorite random number is `r rand`.  
+
+## Incorporating Graphics
+Let's first simulate some data.
+```{r simulatedata, echo = TRUE}
+x <- rnorm(100); y <- x + rnorm(100, sd = 0.5)
+```
+Here is a scatterplot of the data.
+```{r scatterplot, fig.height=4}
+par(mar = c(5, 4, 1, 1), las = 1)
+plot(x, y, main = "My Simulated Data")
+```
+
+## Making Tables with xtable
+```{r fitmodel}
+library(datasets)
+data(airquality)
+fit <- lm(Ozone ~ Wind + Temp + Solar.R, data = airquality)
+```
+Here is a table of regression coefficients.
+```{r showtable, results="asis"}
+library(xtable)
+xt <- xtable(summary(fit))
+print(xt, type = "html")
+```
+
+## Setting Global Options
+* Sometimes we want to set options for every code chunk that are different from the defaults, e.g. we may want to supress all the code echoing and results output
+* We have to write some code to set these global options
+
+To do this:  
+1. at the beginning of your document, have a code chunk {r setoptions, echo = FALSE}  
+2. in the setoptions code chunk use opts_chunk$set(echo = FALSE, results = "hide")  
+Then, by default, every code chunk would not echo options and the results would be supressed.  You can override the global setting in a given chunk by setting echo = TRUE, e.g.  
+
+###Some common options: 
+Output  
+-results: "asis", "hide"  
+-echo: TRUE, FALSE  
+Figures:  
+-fig.height: numeric  
+-fig.width: numeric  
+
+#Caching Computations
+What if one code chunk takes a long time to run?  All chunks have to be re-computed every time you re-knit the file.  
+The cache=TRUE option can be set on a chunk-by-chunk basis to store results of computation.  After the first run, results are loaded from the cache.  
+If the data or the code (or anything external) changes, you need to rerun the cached code chunks.  Dependencies are not checked explicitly.  It may not be possible to cache some chunks with significant side effects (outside the doc?).
+## Other Notes
+If you aren't using RStudio, there is another, more complicated way to make a knitr document:
+1. library(knitr)
+2. setwd(<working directory>)
+3. knit2html("document.Rmd")
+4. browseURL("document.html")  
+
+Note that the .Rmd extension is customary but not necessary.  
