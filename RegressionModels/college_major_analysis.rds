@@ -1,0 +1,73 @@
+dance_start(value = FALSE, contents = FALSE)
+head(college[,1:6])
+head(college[,7:12])
+head(college[,13:19])
+plot(college$median)
+unique(college$major_category)
+z <- reorder(factor(college$major_category))
+z <- reorder(factor(college$major_category),"Arts")
+z <- relevel(factor(college$major_category), "Arts")
+cbind(college,z)
+college <- cbind(college,z)
+fit1 <- lm(median~z, college)
+summary(fit1)$coef
+fit2 <- lm(median~z+perc_employed_fulltime, college)
+college <- cbind(college,z) %>% filter(complete.cases(college))
+collge <- complete.cases(college)
+fit1 <- lm(median~z, college)
+fit2 <- lm(median~z+perc_employed_fulltime, college)
+head(college)
+collge <- college[complete.cases(college),]
+head(collge)
+dim(college)
+fim(collge)
+dim(collge)
+fit1 <- lm(median~z, collge)
+fit2 <- lm(median~z+perc_employed_fulltime, collge)
+anova(fit1,fit2)
+fit2 <- lm(median~z*perc_employed_fulltime, collge)
+summary(fit2)
+fit2 <- lm(median~z+perc_employed_fulltime+z*perc_employed_fulltime, collge)
+summary(fit2)
+fit2 <- lm(median~z+perc_women, collge)
+anova(fit1,fit2)
+colnames(college)
+summary(lm(median~., data = select(collge, -c(major_category, majorcode, p75th,
+p25th, sample_size, perc_non_college_jobs,
+perc_unemployed, perc_employed_parttime))))
+summary(lm(median~., data = select(collge, -c(major_category, major_code, p75th,
+p25th, sample_size, perc_non_college_jobs,
+perc_unemployed, perc_employed_parttime))))
+summary(lm(median~., data = select(collge, -c(major_category, major_code, p75th,
+p25th, sample_size, perc_non_college_jobs,
+perc_unemployed, perc_employed_parttime,rank))))
+summary(lm(median~., data = select(collge, -c(major_category, major_code, p75th,
+p25th, sample_size, perc_non_college_jobs,
+perc_unemployed, perc_employed_parttime,
+major, rank))))
+summary(lm(median~., data = select(collge, -c(major_category, major_code, p75th,
+p25th, sample_size, perc_non_college_jobs,
+perc_unemployed, perc_employed_parttime,
+major, rank,perc_men))))
+z <- relevel(factor(college$major_category), "Business")
+data("college")
+z <- relevel(factor(college$major_category), "Business")
+college <- cbind(college,z)
+college <- college[complete.cases(college),]
+fit1 <- lm(median~perc_employed_fulltime_yearround, college)
+summary(fit1)$coef
+fit2 <- lm(median~perc_employed_fulltime_yearround + z, college)
+anova(fit1,fit2)
+summary(fit2)
+data(college)
+z <- relevel(factor(college$major_category), "Health")
+college <- cbind(college,z)
+college <- college[complete.cases(college),]
+fit1 <- lm(median~perc_employed_fulltime_yearround, college)
+fit2 <- lm(median~perc_employed_fulltime_yearround + z, college)
+summary(fit2)
+fit3 <- lm(median~z, college)
+fit4 <- lm(median~z+perc_employed_fulltime_yearround, college)
+anova(fit3, fit4)
+dance_save("~/Desktop/college_major_analysis.rds")
+savehistory("C:/Users/Kelly/Desktop/college_major_analysis.rds")
